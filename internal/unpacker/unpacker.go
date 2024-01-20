@@ -93,32 +93,78 @@ func unpackFile(fname string, results *models.Results, queue *list.List) (err er
 		Supported: false,
 		Error:     "",
 	}
+
+	// This set of nested switch statements is unfortunately complicated.
 	switch mTypeStr {
+
 	// Catch the modern MS office docs
 	case "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+		"application/vnd.openxmlformats-officedocument.presentationml.presentation",
 		"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
 		unpackerImpl = &unpackers.OfficeZip{}
 		results.ParsedFiles[fname].Supported = true
+
 	// Grab OLEv2, or MS-CFB
-	case "application/x-ole-storage":
+	case "application/x-ole-storage", "application/vnd.ms-powerpoint":
+		results.ParsedFiles[fname].Supported = true
 		unpackerImpl = &unpackers.MSCFB{}
-		// This can be avariety of things... including OLE 1.0
+
+	// This can be avariety of things... including OLE 1.0
 	case "application/octet-stream":
 		fileName := path.Base(fname)
 		fileExtension := filepath.Ext(fileName)
-		switch fileName {
-		case "Ole10Native":
-			results.ParsedFiles[fname].Supported = true
-			unpackerImpl = &unpackers.OLE10Native{}
-		case "CompObj", "ObjInfo":
-			results.ParsedFiles[fname].Supported = true
-			return
-		}
+
+		// Switch by extension for application/octet-stream files.
 		switch fileExtension {
-		case "emf":
+
+		// If no extension, match the name.
+		case "":
+			switch fileName {
+			// This is the old OLE format, which we have a parser for.
+			case "Ole10Native":
+				results.ParsedFiles[fname].Supported = true
+				unpackerImpl = &unpackers.OLE10Native{}
+
+			// These are either not currently parseable, or not
+			// particularly interesting. Supported, but not unpacked.
+			case "Ole",
+				"CompObj",
+				"ObjInfo",
+				"PRINT",
+				"EPRINT",
+				"1Table",
+				"0Table",
+				"Data",
+				"WordDocument",
+				"VisioDocument",
+				"Contents":
+				results.ParsedFiles[fname].Supported = true
+				return
+
+			// If we find a file with type application/octet-stream and
+			// we don't recognize the extension or extensinoless name,
+			// we want it to surface as an error in the log output.
+			default:
+				results.ParsedFiles[fname].Error = fmt.Sprintf("unsupported filename for extraction from application/octet-stream: %s", fileName)
+				return
+			}
+		// Potentially different options for .bin files.
+		case ".bin":
+			switch fileName {
+			case "attachedToolbars.bin":
+				results.ParsedFiles[fname].Supported = true
+				return
+			default:
+				results.ParsedFiles[fname].Error = fmt.Sprintf("unsupported filename for extraction from application/octet-stream: %s", fileName)
+				return
+			}
+		// Maybe someday we'll do format conversion. But for now,
+		// we just recognize and skip further parsing.
+		case ".emf", ".wmf":
 			results.ParsedFiles[fname].Supported = true
 			return
 
+		// Surface an error if it's unrecognized.
 		default:
 			results.ParsedFiles[fname].Error = fmt.Sprintf("unsupported filename/extension pattern for extraction from application/octet-stream: %s/%s", fileName, fileExtension)
 			return
@@ -131,7 +177,8 @@ func unpackFile(fname string, results *models.Results, queue *list.List) (err er
 		"application/pdf",
 		"application/vnd.ms-outlook", // We don't try to unpack Outlook .msg files
 		"text/xml; charset=utf-8",
-		"text/plain; charset=utf-8":
+		"text/plain; charset=utf-8",
+		"text/plain; charset=utf-16be":
 		results.ParsedFiles[fname].Supported = true
 		return
 	default:

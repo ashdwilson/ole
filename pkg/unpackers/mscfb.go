@@ -12,8 +12,11 @@ import (
 	"github.com/richardlehane/mscfb"
 )
 
+// The MSCFB implementation of Unpacker uses a 3rd-party library
+// to parse MS-CFB (OLE v2) files.
 type MSCFB struct{}
 
+// This unpacker extracts all enclosed objects, and enqueues them for further examination.
 func (m *MSCFB) UnpackStream(inpath string, stream io.ReaderAt, size int64, results *models.Results, queue *list.List) (err error) {
 	// Base path is inpath-members/
 	basePath := fmt.Sprintf("%s-members", inpath)

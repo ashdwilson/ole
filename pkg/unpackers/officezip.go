@@ -12,8 +12,11 @@ import (
 	"github.com/ashdwilson/ole/pkg/models"
 )
 
+// This implementation of the Unpacker interface uses archive/zip
+// to extract all members from the Office document.
 type OfficeZip struct{}
 
+// Unpack all the archive members and queue them up for parsing.
 func (o *OfficeZip) UnpackStream(inpath string, stream io.ReaderAt, size int64, results *models.Results, queue *list.List) (err error) {
 	// Base path is inpath-members/
 	basePath := fmt.Sprintf("%s-members", inpath)
