@@ -15,7 +15,7 @@ This tool will extract all members from all recognized archive formats, recursiv
 
 ### Prerequisites to
 
-This tool was developed on MacOS. It may work on other platforms, and probably works fine on Linux, but it hasn't been tested beyond MacOS.
+This tool was developed on MacOS. It may work on other platforms, and probably works fine on Linux, given the tests run on Ubuntu.
 
 Go 1.21 or newer is required.
 
