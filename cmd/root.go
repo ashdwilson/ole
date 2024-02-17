@@ -15,7 +15,7 @@ var inFile, outDir string
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "ole",
-	Short: "Unpack a MS office document, including OLE objects.",
+	Short: "Unpack an Office Open XML (docx, xlsx, etc...) document, including OLE objects.",
 	RunE:  unpack,
 }
 
@@ -27,7 +27,7 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.Flags().StringVarP(&inFile, "infile", "i", "", "Input MS office format file.")
+	rootCmd.Flags().StringVarP(&inFile, "infile", "i", "", "Input file path.")
 	rootCmd.Flags().StringVarP(&outDir, "outdir", "o", "", "Output directory for extracted assets.")
 }
 
